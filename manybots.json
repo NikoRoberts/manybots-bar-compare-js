@@ -1,0 +1,21 @@
+{
+   "name": "Bar Compare",
+   "nickname": "mbjs-barcompare",
+   "version": "0.0.1",
+   "description": "Compare two sets of information quickly and easily",
+   "developer": {
+      "name": "NikoRoberts",
+      "url": "https://github.com/NikoRoberts/manybots-bar-compare-js"
+   },
+   "category": "Lifestyle",
+   "display": {
+      "library": true,
+      "menu": true
+   },
+   "repositories": [
+       {
+         "type": "git",
+         "url": "https://github.com/NikoRoberts/manybots-bar-compare-js"
+       }
+   ]
+}

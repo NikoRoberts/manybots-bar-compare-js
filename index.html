@@ -2,35 +2,28 @@
 <head>
   <title>Visualize your data</title>
   <link rel="stylesheet" href="https://www.manybots.com/stylesheets/manybots.css" type="text/css" media="screen">
-  
+
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js" type="text/javascript"></script>
-  <script src="http://localhost:5000/javascripts/manybots.js" type="text/javascript"></script>
-  <script src="http://cdnjs.cloudflare.com/ajax/libs/raphael/2.0.1/raphael-min.js" type="text/javascript">
-  </script>
-  <script type="text/javascript" src="http://g.raphaeljs.com/g.raphael.js">
-  </script>
+  <script src="https://www.manybots.com/javascripts/manybots.js" type="text/javascript"></script>
+  <script src="raphael.js" type="text/javascript"></script>
+  <script src="g.raphael.js" type="text/javascript"></script>
+  <script src="bar.js" type="text/javascript"></script>
+  <script src="http://documentcloud.github.com/underscore/underscore-min.js" type="text/javascript"></script>
   
-  <script src="http://g.raphaeljs.com/g.dot.js" type="text/javascript"></script>
-  
-  <script src="http://documentcloud.github.com/underscore/underscore-min.js" type="text/javascript">
-  </script>
-  
-  <script src="punchcard.js" type="text/javascript">
-  </script>
   
   <script type="text/javascript">
     
-    var loadPunchCard = function(options, limit) {
+    var loadBarGraph = function(options, limit) {
       var config = {
-        protocol: 'http',
-        host: 'localhost:5000',
+          protocol: 'https',
+          host: 'manybots.com',
       }
       var client = new ManybotsClient(config);
-      var filter = options || {
-        'verbs' : 'join',
+    var filter = options || {
+        'verbs' : 'join'
       };
       
-      var limit = limit || 100;
+      var limit = limit || 500;
       
       client.getJSON('/activities', {'filter':filter, 'limit': limit}, function(stream) {
         var activities = stream.data.items;
@@ -41,39 +34,36 @@
           return false;
         }
         
-        var dates = _.groupBy(activities, function(item) { 
-          var published = new Date((item.published).replace(/-/g,"/").replace(/[TZ]/g," "));
-          return published.getDay(); 
-        });
         
-        var days = {};
-        
-        days.sunday = dates[0];
-        days.monday = dates[1];
-        days.tuesday = dates[2];
-        days.wednesday = dates[3];
-        days.thursday = dates[4];
-        days.friday = dates[5];
-        days.saturday = dates[6];
-        
-        var results = _.collect(days, function(items, day){
-          var total = [];
-          var grouped_by_hour = _.groupBy(items, function(item) {
-            var published = new Date((item.published).replace(/-/g,"/").replace(/[TZ]/g," "));
-            return published.getHours();
+          var graph = [];
+          var graphLabels = [];
+          var grouped_by_verb = _.groupBy(activities, function(item) {
+            //console.log(item.verb);
+            return item.verb;
           });
-          _.each(_.range(24), function(x) {
-            var this_total = grouped_by_hour[x] ? grouped_by_hour[x].length : 0;            
-            total.push(this_total);
+          
+          _.each(grouped_by_verb, function(x) {
+            var this_total = x ? x.length : 0;            
+            graph.push(this_total);
           });
-          return total;
-        });
-        
+          
+          graphLabels = Object.keys(grouped_by_verb);
+
         $('#loading').hide();
-        punchCard(results);
-        
+        //bar(graph);
+        var r = Raphael("holder"),
+                    fin = function () {
+                        this.flag = r.popup(this.bar.x, this.bar.y, this.bar.value || "0").insertBefore(this);
+                    },
+                    fout = function () {
+                        this.flag.animate({opacity: 0}, 300, function () {this.remove();});
+                    };
+        console.log(graphLabels)
+        console.log(graph)
+        r.barchart(0, 0, 500, 200, graph).hover(fin, fout).label(graphLabels,true);
         
       });
+        
     };
     
       var $go = function() {
@@ -83,13 +73,9 @@
         filter.verbs = $('#verbs').val();
         filter.objects = $('#objects').val();
         filter.targets = $('#targets').val();
-        var limit = parseInt($('#limit').val()) || 100;
-        if (limit > 1000) {
-          alert('Limiting to 1000 latest activities.');
-          $('#limit').val('1000');
-          limit = 1000;
-        }
-        loadPunchCard(filter, limit);
+        var limit = parseInt($('#limit').val()) || 500;
+       
+        loadBarGraph(filter, limit);
       };
     
     $(function() {
@@ -101,24 +87,28 @@
       });
       
     });
+    
   </script>
 </head>
 <body>
   
+  
+  <div id="loading" style="display:none; color: #CCC;">
+    Loading, can take a few seconds if you have a lot of activities...
+    <div id="loader" style="line-height: 115px; text-align: center; "><img alt="activity indicator" src="images/loading.gif"></div>
+  </div>
   <div id="filter-wrapper">
     <form id="filter" action="#" method="get" accept-charset="utf-8">
-      <label for="verbs">Verb</label><input type="text" name="verbs" value="start" id="verbs">
-      <label for="objects">Object</label><input type="text" name="objects" value="" id="objects">
+      <label for="verbs">Verb</label><input type="text" name="verbs" value="" id="verbs">
+      <label for="objects">Object</label><input type="text" name="objects" value="email" id="objects">
       <label for="targets">Target</label><input type="text" name="targets" value="" id="targets">
-      <label for="limit">Limit to </label><input type="text" name="limit" value="100" id="limit" size="4"> most recent
+      <label for="limit">Limit to </label><input type="text" name="limit" value="500" id="limit" size="4"> most recent
       <input type="submit" name="submit" value="Load" id="submit">
     </form>
   </div>
   
-  <div id="loading" style="display:none; color: #CCC;">
-    Loading, can take a few seconds if you have a lot of activities...
-  </div>
+  <div id="holder"></div>
   
-  <div id="punchcard"></div>
+  
 </body>
 </html>
