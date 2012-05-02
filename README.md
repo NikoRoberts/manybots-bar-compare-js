@@ -1,0 +1,2 @@
+manybots-bar-compare-js
+=======================
